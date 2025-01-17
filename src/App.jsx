@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 const baseUrl = import.meta.env.VITE_BASE_URL;
 const apiPath = import.meta.env.VITE_API_PATH;
 import './App.css'
@@ -59,11 +59,22 @@ function App() {
   const checkUserLogin = async () => {
     try {
       await axios.post(`${baseUrl}/api/user/check`);
-      alert("使用者已成功登入");
+      console.log("使用者已成功登入");
     } catch (error) {
       alert(error.response.data.message);
     }
   }
+
+  useEffect(()=>{
+    const token = document.cookie.replace(
+      // eslint-disable-next-line no-useless-escape
+      /(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/,
+      "$1",
+    );
+    axios.defaults.headers.common['Authorization'] = token;
+    checkUserLogin();
+    setIsAuth(true);
+  }, [])
 
   return (
     <>
@@ -71,7 +82,6 @@ function App() {
         <div className="container py-5">
           <div className="row">
             <div className="col-6">
-              <button type="button" className="btn btn-success mb-3" onClick={checkUserLogin} >檢查使用者是否已登入</button>
               <h2>產品列表</h2>
               <table className="table">
                 <thead>
