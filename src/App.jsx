@@ -1,8 +1,22 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { Modal } from 'bootstrap';
+import { useEffect, useRef, useState } from "react";
+import './App.css'
 const baseUrl = import.meta.env.VITE_BASE_URL;
 const apiPath = import.meta.env.VITE_API_PATH;
-import './App.css'
+
+const defaultModalState = {
+  imageUrl: "",
+  title: "",
+  category: "",
+  unit: "",
+  origin_price: "",
+  price: "",
+  description: "",
+  content: "",
+  is_enabled: 0,
+  imagesUrl: [""]
+};
 
 function App() {
   // 帳密狀態
@@ -50,9 +64,7 @@ function App() {
     }
   }
 
-  // 產品細節狀態
   // 產品列表狀態
-  const [tempProduct, setTempProduct] = useState({});
   const [products, setProducts] = useState([]);
 
   // 確認使用者是否已登入
@@ -64,7 +76,7 @@ function App() {
       alert(error.response.data.message);
     }
   }
-
+  // 自動檢查是否已登入
   useEffect(()=>{
     const token = document.cookie.replace(
       // eslint-disable-next-line no-useless-escape
@@ -74,15 +86,57 @@ function App() {
     axios.defaults.headers.common['Authorization'] = token;
     checkUserLogin();
     setIsAuth(true);
+    getProducts();
   }, [])
+
+  const productModalRef = useRef(null);
+  const modalRef = useRef(null);
+  // 渲染後才能取得DOM
+  useEffect(()=>{
+    modalRef.current = new Modal(productModalRef.current);
+  }, [])
+
+  // modal狀態為新增or編輯
+  const [modalState, setModalState] = useState(null);
+  
+  // 開啟新增產品modal、編輯產品modal
+  const openModal = (mod, product) =>{
+    setModalState(mod);
+    if(mod === "add"){
+      setTempProduct(defaultModalState);
+    }else if(mod === "edit"){
+      setTempProduct(product);
+    }
+    modalRef.current.show();
+  }
+  
+  const closeModal = () =>{
+    modalRef.current.hide();
+  }
+  // 產品modal狀態
+  const [tempProduct, setTempProduct] = useState(defaultModalState);
+
+  // 更新modal狀態，確認name type為checkbox使用checked
+  const handleProductContent = (e) =>{
+    const { name, value, checked, type } = e.target;
+    setTempProduct({
+      ...tempProduct,
+      [name]: type === "checkbox" ? checked : value
+    })
+  }
+
+
 
   return (
     <>
       {isAuth ?
         <div className="container py-5">
           <div className="row">
-            <div className="col-6">
-              <h2>產品列表</h2>
+            <div className="col">
+              <div className="d-flex justify-content-between">
+                <h2>產品列表</h2>
+                <button type="button" className="btn btn-primary" onClick={()=>{openModal("add")}}>新增產品</button>
+              </div>
               <table className="table">
                 <thead>
                   <tr>
@@ -90,7 +144,7 @@ function App() {
                     <th scope="col">原價</th>
                     <th scope="col">售價</th>
                     <th scope="col">是否啟用</th>
-                    <th scope="col">查看細節</th>
+                    <th scope="col">編輯商品</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -101,20 +155,17 @@ function App() {
                       <td>{product.price}</td>
                       <td>{product.is_enabled ? <span style={{color: "green"}}>已啟用</span> : "未啟用 "}</td>
                       <td>
-                        <button
-                          onClick={() => setTempProduct(product)}
-                          className="btn btn-primary"
-                          type="button"
-                        >
-                          查看細節
-                        </button>
+                        <div className="btn-group">
+                          <button type="button" className="btn btn-outline-primary btn-sm" onClick={()=>{openModal("edit", product)}} >編輯</button>
+                          <button type="button" className="btn btn-outline-danger btn-sm">刪除</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="col-6">
+            {/* <div className="col-6">
               <h2>單一產品細節</h2>
               {tempProduct.title ? (
                 <div className="card">
@@ -143,7 +194,7 @@ function App() {
               ) : (
                 <p>請選擇一個商品查看</p>
               )}
-            </div>
+            </div> */}
           </div>
         </div> :
         <div className="d-flex flex-column justify-content-center align-items-center vh-100">
@@ -162,6 +213,202 @@ function App() {
           <p className="mt-5 mb-3 text-muted">&copy; 2024~∞ - 六角學院</p>
         </div>
       }
+      <div ref={productModalRef} id="productModal" className="modal" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="modal-dialog modal-dialog-centered modal-xl">
+          <div className="modal-content border-0 shadow">
+            <div className="modal-header border-bottom">
+              <h5 className="modal-title fs-4">{modalState==="add"? "新增產品" : "編輯產品"}</h5>
+              <button type="button" className="btn-close" aria-label="Close" onClick={closeModal}></button>
+            </div>
+            <div className="modal-body p-4">
+              <div className="row g-4">
+                <div className="col-md-4">
+                  <div className="mb-4">
+                    <label htmlFor="primary-image" className="form-label">
+                      主圖
+                    </label>
+                    <div className="input-group">
+                      <input
+                        name="imageUrl"
+                        type="text"
+                        id="primary-image"
+                        className="form-control"
+                        placeholder="請輸入圖片連結"
+                        value={tempProduct.imageUrl}
+                        onChange={handleProductContent}
+                      />
+                    </div>
+                    <img
+                      src={tempProduct.imageUrl}
+                      alt={tempProduct.title}
+                      className="img-fluid"
+                    />
+                  </div>
+
+                  {/* 副圖 */}
+                  <div className="border border-2 border-dashed rounded-3 p-3">
+                    {tempProduct.imagesUrl?.map((image, index) => (
+                      <div key={index} className="mb-2">
+                        <label
+                          htmlFor={`imagesUrl-${index + 1}`}
+                          className="form-label"
+                        >
+                          副圖 {index + 1}
+                        </label>
+                        <input
+                          id={`imagesUrl-${index + 1}`}
+                          type="text"
+                          placeholder={`圖片網址 ${index + 1}`}
+                          className="form-control mb-2"
+                        />
+                        {image && (
+                          <img
+                            src={image}
+                            alt={`副圖 ${index + 1}`}
+                            className="img-fluid mb-2"
+                          />
+                        )}
+                      </div>
+                    ))}
+
+                  </div>
+                </div>
+
+                <div className="col-md-8">
+                  <div className="mb-3">
+                    <label htmlFor="title" className="form-label">
+                      標題
+                    </label>
+                    <input
+                      name="title"
+                      id="title"
+                      type="text"
+                      className="form-control"
+                      placeholder="請輸入標題"
+                      value={tempProduct.title}
+                      onChange={handleProductContent}
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="category" className="form-label">
+                      分類
+                    </label>
+                    <input
+                      name="category"
+                      id="category"
+                      type="text"
+                      className="form-control"
+                      placeholder="請輸入分類"
+                      value={tempProduct.category}
+                      onChange={handleProductContent}
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="unit" className="form-label">
+                      單位
+                    </label>
+                    <input
+                      name="unit"
+                      id="unit"
+                      type="text"
+                      className="form-control"
+                      placeholder="請輸入單位"
+                      value={tempProduct.unit}
+                      onChange={handleProductContent}
+                    />
+                  </div>
+
+                  <div className="row g-3 mb-3">
+                    <div className="col-6">
+                      <label htmlFor="origin_price" className="form-label">
+                        原價
+                      </label>
+                      <input
+                        name="origin_price"
+                        id="origin_price"
+                        type="number"
+                        className="form-control"
+                        placeholder="請輸入原價"
+                        value={tempProduct.origin_price}
+                        onChange={handleProductContent}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label htmlFor="price" className="form-label">
+                        售價
+                      </label>
+                      <input
+                        name="price"
+                        id="price"
+                        type="number"
+                        className="form-control"
+                        placeholder="請輸入售價"
+                        value={tempProduct.price}
+                        onChange={handleProductContent}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="description" className="form-label">
+                      產品描述
+                    </label>
+                    <textarea
+                      name="description"
+                      id="description"
+                      className="form-control"
+                      rows={4}
+                      placeholder="請輸入產品描述"
+                      value={tempProduct.description}
+                      onChange={handleProductContent}
+                    ></textarea>
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="content" className="form-label">
+                      說明內容
+                    </label>
+                    <textarea
+                      name="content"
+                      id="content"
+                      className="form-control"
+                      rows={4}
+                      placeholder="請輸入說明內容"
+                      value={tempProduct.content}
+                      onChange={handleProductContent}
+                    ></textarea>
+                  </div>
+
+                  <div className="form-check">
+                    <input
+                      name="is_enabled"
+                      type="checkbox"
+                      className="form-check-input"
+                      id="isEnabled"
+                      checked={tempProduct.is_enabled}
+                      onChange={handleProductContent}
+                    />
+                    <label className="form-check-label" htmlFor="isEnabled">
+                      是否啟用
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer border-top bg-light">
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>
+                取消
+              </button>
+              <button type="button" className="btn btn-primary">
+                確認
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   )
 }
