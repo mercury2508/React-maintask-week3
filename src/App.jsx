@@ -71,9 +71,12 @@ function App() {
   const checkUserLogin = async () => {
     try {
       await axios.post(`${baseUrl}/api/user/check`);
-      console.log("使用者已成功登入");
+      alert("使用者已成功登入");
+      setIsAuth(true);
+      getProducts();
     } catch (error) {
       alert(error.response.data.message);
+      setIsAuth(false);
     }
   }
   // 自動檢查是否已登入
@@ -83,10 +86,11 @@ function App() {
       /(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/,
       "$1",
     );
+    if(!token){
+      return;
+    }
     axios.defaults.headers.common['Authorization'] = token;
     checkUserLogin();
-    setIsAuth(true);
-    getProducts();
   }, [])
 
   const productModalRef = useRef(null);
