@@ -127,22 +127,23 @@ function App() {
     })
   };
 
-  // 刪除產品modal
+  // 刪除modal
   const deleteProductModalRef = useRef(null);
   const deleteModalRef = useRef(null);
   useEffect(()=>{
     deleteModalRef.current = new Modal(deleteProductModalRef.current);
   }, [])
 
+  // 開啟刪除modal
   const openDeleteModal = (product) =>{
     setTempProduct(product);
     deleteModalRef.current.show();
-  }
+  };
 
+  // 關閉刪除modal
   const closeDeleteModal = () =>{
     deleteModalRef.current.hide();
-  }
-
+  };
 
   // 調整副圖
   const handleImageChange = (e, index) =>{
@@ -163,7 +164,7 @@ function App() {
       ...tempProduct,
       imagesUrl: newImages
     })
-  }
+  };
 
   //刪除副圖button
   const handleRemoveImages = () =>{
@@ -173,7 +174,8 @@ function App() {
       ...tempProduct,
       imagesUrl: newImages
     })
-  }
+  };
+
   // 新增產品
   const addNewProduct = async() =>{
     try {
@@ -188,9 +190,9 @@ function App() {
       await axios.post(`${baseUrl}/api/${apiPath}/admin/product`, productData)
       alert("新增產品成功");
     } catch (error) {
-      alert(error.response.data.message);
+      alert(`欄位尚未填寫:${error.response.data.message}`);
     }
-  }
+  };
 
   // 修改產品
   const adjustProduct = async() =>{
@@ -208,7 +210,7 @@ function App() {
     } catch (error) {
       alert(error);
     }
-  }
+  };
 
   // 送出新增產品
   // 使用modalState狀態判斷該送出新增or編輯HTTP請求
@@ -221,7 +223,7 @@ function App() {
     } catch (error) {
       alert(error);
     }
-  }
+  };
 
   // 刪除產品
   const deleteProduct = async() =>{
@@ -232,7 +234,7 @@ function App() {
     } catch (error) {
       alert(error);
     }
-  }
+  };
 
   return (
     <>
@@ -272,36 +274,6 @@ function App() {
                 </tbody>
               </table>
             </div>
-            {/* <div className="col-6">
-              <h2>單一產品細節</h2>
-              {tempProduct.title ? (
-                <div className="card">
-                  <img
-                    src={tempProduct.imageUrl}
-                    className="card-img-top img-fluid"
-                    alt={tempProduct.title}
-                  />
-                  <div className="card-body">
-                    <h5 className="card-title">
-                      {tempProduct.title}
-                      <span className="badge text-bg-primary">
-                        {tempProduct.category}
-                      </span>
-                    </h5>
-                    <p className="card-text">商品描述：{tempProduct.description}</p>
-                    <p className="card-text">商品內容：{tempProduct.content}</p>
-                    <p className="card-text">
-                      <del>{tempProduct.origin_price} 元</del> / {tempProduct.price}{" "}
-                      元
-                    </p>
-                    <h5 className="card-title">更多圖片：</h5>
-                    {tempProduct.imagesUrl?.map((image) => (image && (<img key={image} src={image} className="img-fluid" />)))}
-                  </div>
-                </div>
-              ) : (
-                <p>請選擇一個商品查看</p>
-              )}
-            </div> */}
           </div>
         </div> :
         <div className="d-flex flex-column justify-content-center align-items-center vh-100">
@@ -352,7 +324,6 @@ function App() {
                     />
                   </div>
 
-                  {/* 副圖 */}
                   <div className="border border-2 border-dashed rounded-3 p-3">
                     {tempProduct.imagesUrl?.map((image, index) => (
                       <div key={index} className="mb-2">
